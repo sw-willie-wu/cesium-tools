@@ -11,13 +11,13 @@ export const DegToRad = (deg: number) => CMath.toRadians(deg)
 export const RadToDeg = (rad: number) => CMath.toDegrees(rad)
 
 // 坐標轉換
-export function C3ToPosition(C3: Cartesian3): Position {
-    const llaRad = Cartographic.fromCartesian(C3)
+export function C3ToPosition(c3: Cartesian3): Position {
+    const llaRad = Cartographic.fromCartesian(c3)
     return {
-        Lon: { Deg: RadToDeg(llaRad.longitude), Rad: llaRad.longitude },
-        Lat: { Deg: RadToDeg(llaRad.latitude), Rad: llaRad.latitude },
-        Height: llaRad.height,
-        C3: C3
+        lon: { deg: RadToDeg(llaRad.longitude), rad: llaRad.longitude },
+        lat: { deg: RadToDeg(llaRad.latitude), rad: llaRad.latitude },
+        height: llaRad.height,
+        c3: c3
     }
 }
 

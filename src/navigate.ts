@@ -18,7 +18,7 @@ export class NavigateTool {
         if (Array.isArray(position)) {
             center = Cartesian3.fromDegrees(position[0], position[1], position[2])
         } else {
-            center = position.C3
+            center = position.c3
         }
         this.viewer.camera.lookAt(
             center,
@@ -31,15 +31,15 @@ export class NavigateTool {
     }
 
     lockCurrentPOV() {
-        const mapCenter = CommonTool.getMapParams(this.viewer)?.Center
+        const mapCenter = CommonTool.getMapParams(this.viewer)?.center
         const cameraEOP = CommonTool.getCameraParams(this.viewer)
         if (!mapCenter || !cameraEOP) return
-        const distance = CommonTool.calculateDistance(mapCenter, cameraEOP.Position)
+        const distance = CommonTool.calculateDistance(mapCenter, cameraEOP.position)
         this.viewer.camera.lookAt(
-            mapCenter.C3,
+            mapCenter.c3,
             new HeadingPitchRange(
-                cameraEOP.Heading.Rad,
-                cameraEOP.Pitch.Rad,
+                cameraEOP.heading.rad,
+                cameraEOP.pitch.rad,
                 distance
             )
         )
@@ -50,16 +50,16 @@ export class NavigateTool {
     }
 
     rotateMap(target: { heading?: number, pitch?: number }) {
-        const mapCenter = Common.getMapParams(this.viewer)?.Center
+        const mapCenter = Common.getMapParams(this.viewer)?.center
         const cameraEOP = Common.getCameraParams(this.viewer)
         if (!mapCenter) return
 
-        const distance = CommonTool.calculateDistance(mapCenter, cameraEOP.Position)
-        const targetHeading = target.heading === undefined ? cameraEOP.Heading.Deg : target.heading
-        const targetPitch = target.pitch === undefined ? cameraEOP.Pitch.Deg : target.pitch
+        const distance = CommonTool.calculateDistance(mapCenter, cameraEOP.position)
+        const targetHeading = target.heading === undefined ? cameraEOP.heading.deg : target.heading
+        const targetPitch = target.pitch === undefined ? cameraEOP.pitch.deg : target.pitch
 
-        let currentHeading = cameraEOP.Heading.Deg
-        let currentPitch = cameraEOP.Pitch.Deg
+        let currentHeading = cameraEOP.heading.deg
+        let currentPitch = cameraEOP.pitch.deg
 
         // console.log(targetHeading, currentHeading, targetPitch, currentPitch)
 
@@ -103,20 +103,20 @@ export class NavigateTool {
     }
 
     zoomIn() {
-        const mapCenter = Common.getMapParams(this.viewer)?.Center
+        const mapCenter = Common.getMapParams(this.viewer)?.center
         const cameraEOP = Common.getCameraParams(this.viewer)
         if (!mapCenter || !cameraEOP) return
-        const d = CommonTool.calculateDistance(mapCenter, cameraEOP.Position)
-        this.lockPOV(mapCenter, cameraEOP.Heading.Deg, cameraEOP.Pitch.Deg, d * 0.9)
+        const d = CommonTool.calculateDistance(mapCenter, cameraEOP.position)
+        this.lockPOV(mapCenter, cameraEOP.heading.deg, cameraEOP.pitch.deg, d * 0.9)
         this.unlockPOV()
     }
 
     zoomOut() {
-        const mapCenter = Common.getMapParams(this.viewer)?.Center
+        const mapCenter = Common.getMapParams(this.viewer)?.center
         const cameraEOP = Common.getCameraParams(this.viewer)
         if (!mapCenter || !cameraEOP) return
-        const d = CommonTool.calculateDistance(mapCenter, cameraEOP.Position)
-        this.lockPOV(mapCenter, cameraEOP.Heading.Deg, cameraEOP.Pitch.Deg, d * 1.1)
+        const d = CommonTool.calculateDistance(mapCenter, cameraEOP.position)
+        this.lockPOV(mapCenter, cameraEOP.heading.deg, cameraEOP.pitch.deg, d * 1.1)
         this.unlockPOV()
     }
 }

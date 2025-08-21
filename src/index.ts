@@ -10,3 +10,6 @@ import { LayerTool } from './layers'
 // import type { MapParams, CameraParams } from "./common"
 
 export { DrawTool, CommonTool, NavigateTool, TrackTool, ConvertTool, LayerTool }
+export type * from './types'
+// export type { Position } from './types'
+// export type { MapParams, CameraParams } from './types/params'

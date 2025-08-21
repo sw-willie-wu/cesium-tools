@@ -1,16 +1,15 @@
-import type { Angle, Position } from "./position"
+import type { GeoPosition, Attitude } from "./position"
 
 
-export interface MapParams {
+export interface CanvasParams {
     height: number
     width: number
-    center: Position
+}
+
+export interface MapParams {
+    shape: CanvasParams
+    center: GeoPosition
     scale: number
 }
 
-export interface CameraParams {
-    position: Position
-    heading: Angle
-    pitch: Angle
-    roll: Angle
-}
+export interface CameraParams extends GeoPosition, Attitude {}
