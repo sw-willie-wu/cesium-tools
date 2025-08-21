@@ -1,81 +1,84 @@
 # cesium-tools
 
-Cesium 工具函式庫，提供地圖互動、地理計算、繪圖、導航、追蹤、轉換等常用功能，適用於 CesiumJS 應用開發。
+[中文README](./docs/README.zh.md)
 
-## 安裝
+Cesium utility library providing common functions for map interaction, geospatial calculation, drawing, navigation, tracking, and conversion, suitable for CesiumJS application development.
 
-本地開發（建議用 npm link）：
+## Installation
+
+For local development (recommended to use npm link):
+
 ```bash
 cd cesium-tools
 npm install
 npm run build
 npm link
-# 回到主專案
+# Back to your main project
 cd ../
 npm link cesium-tools
 ```
 
-## 使用方式
+## Usage
 
 ```ts
 import { DrawTool, TrackTool, CommonTool, NavigateTool, ConvertTool, LayerTool } from 'cesium-tools'
 import type { Position, Angle, MapParams, CameraParams } from 'cesium-tools'
 
-// 例：計算距離
+// Example: Calculate distance
 const dist = CommonTool.calculateDistance(pos1, pos2)
 
-// 例：繪圖
+// Example: Drawing
 const draw = new DrawTool(viewer)
 draw.startDraw('polyline')
 
-// 例：追蹤滑鼠
+// Example: Mouse tracking
 const track = new TrackTool(viewer)
 track.trackMousePosition(100, refOutput)
 ```
 
-## 主要功能與 API
+## Main Features & API
 
-### CommonTool（地理計算與互動工具）
-- `calculateDistance(p1, p2)`：計算兩點空間距離
-- `getMousePosition(viewer, movement)`：取得滑鼠地理座標
-- `getPositionFromCanvas(viewer, x, y)`：螢幕座標轉地理座標
-- `getMapParams(viewer)`：取得地圖中心、比例、寬高等參數
-- `getCameraParams(viewer)`：取得相機外方位參數
+### CommonTool (Geospatial Calculation & Interaction)
+- `calculateDistance(p1, p2)`: Calculate spatial distance between two points
+- `getMousePosition(viewer, movement)`: Get mouse geolocation
+- `getPositionFromCanvas(viewer, x, y)`: Convert screen coordinates to geolocation
+- `getMapParams(viewer)`: Get map center, scale, width, height, etc.
+- `getCameraParams(viewer)`: Get camera extrinsic parameters
 
-### DrawTool（繪圖工具）
-- `startDraw(drawType)`：啟動繪圖（折線、多邊形）
-- `stopDraw()`：結束繪圖
-- `createLine(positions, options, lineType)`：建立線段 Entity
-- `createPolygon(positions, options)`：建立多邊形 Entity
+### DrawTool (Drawing)
+- `startDraw(drawType)`: Start drawing (polyline, polygon)
+- `stopDraw()`: Stop drawing
+- `createLine(positions, options, lineType)`: Create line entity
+- `createPolygon(positions, options)`: Create polygon entity
 
-### TrackTool（追蹤工具）
-- `trackMousePosition(freq, refOutput)`：追蹤滑鼠地理座標
-- `trackMapParams(freq, refOutput)`：追蹤地圖參數
-- `trackCameraParams(freq, refOutput)`：追蹤相機參數
+### TrackTool (Tracking)
+- `trackMousePosition(freq, refOutput)`: Track mouse geolocation
+- `trackMapParams(freq, refOutput)`: Track map parameters
+- `trackCameraParams(freq, refOutput)`: Track camera parameters
 
-### NavigateTool（地圖導航工具）
-- `lockPOV(position, heading, pitch, range)`：鎖定視角
-- `lockCurrentPOV()`：鎖定目前視角
-- `unlockPOV()`：解除視角鎖定
-- `rotateMap(target)`：平滑旋轉地圖
-- `zoomIn()` / `zoomOut()`：地圖縮放
+### NavigateTool (Navigation)
+- `lockPOV(position, heading, pitch, range)`: Lock point of view
+- `lockCurrentPOV()`: Lock current POV
+- `unlockPOV()`: Unlock POV
+- `rotateMap(target)`: Smoothly rotate map
+- `zoomIn()` / `zoomOut()`: Zoom in/out
 
-### ConvertTool（座標/角度轉換工具）
-- `C3ToPosition(cartesian3)`：Cartesian3 轉地理座標
-- `DegToRad(deg)` / `RadToDeg(rad)`：角度與弧度轉換
-- ...（依 convert.ts 內容擴充）
+### ConvertTool (Coordinate/Angle Conversion)
+- `C3ToPosition(cartesian3)`: Convert Cartesian3 to geolocation
+- `DegToRad(deg)` / `RadToDeg(rad)`: Degree/radian conversion
+- ... (see convert.ts for more)
 
-### LayerTool（圖層管理工具）
-- ...（依 layers.ts 內容擴充）
+### LayerTool (Layer Management)
+- ... (see layers.ts for more)
 
-## 型別定義
+## Type Definitions
 
-- `Position`：地理座標（含經緯度、角度、高度、Cartesian3）
-- `Angle`：角度（度、弧度）
-- `MapParams`：地圖參數
-- `CameraParams`：相機參數
+- `Position`: Geolocation (longitude, latitude, angle, height, Cartesian3)
+- `Angle`: Angle (degree, radian)
+- `MapParams`: Map parameters
+- `CameraParams`: Camera parameters
 
-## 目錄結構
+## Directory Structure
 
 ```
 cesium-tools/
@@ -97,13 +100,22 @@ cesium-tools/
 └── README.md
 ```
 
-## 作者
+## Authors
 
-- [https://github.com/sw-willie-wu](https://github.com/sw-willie-wu)（專案負責人）
-- [https://github.com/thinktron](https://github.com/thinktron)
-- jacky850509@gmail.com
+- **Willie Wu** - *Owner* - [sw-willie-wu](https://github.com/sw-willie-wu)
 
-## 授權
+See also the list of [contributors]() who participated in this project.
 
-MIT License  
-詳見 [LICENSE](./LICENSE)
+## License
+
+See the [licence](./LICENSE) for more informations.
+
+## Acknowledgments
+
+Special thanks to all contributors, testers, and advisors of this project, as well as the CesiumJS team and the open-source community for their technical support.
+
+In particular, special thanks to:
+
+[<img src="./docs/imgs/ttl_logo.png" width="250"/>](https://www.thinktronltd.com/)
+
+This project also benefits from many open-source projects, to which we express our gratitude.
