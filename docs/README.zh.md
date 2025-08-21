@@ -103,7 +103,7 @@ cesium-tools/
 
 - **Willie Wu** - *Owner* - [sw-willie-wu](https://github.com/sw-willie-wu)
 
-另請參閱所有參與本專案的 [contributors]()。
+另請參閱所有參與本專案的 [contributors](./contributors.md)。
 
 ## 授權
 

@@ -104,7 +104,7 @@ cesium-tools/
 
 - **Willie Wu** - *Owner* - [sw-willie-wu](https://github.com/sw-willie-wu)
 
-See also the list of [contributors]() who participated in this project.
+See also the list of [contributors](./docs/contributors.md) who participated in this project.
 
 ## License
 
