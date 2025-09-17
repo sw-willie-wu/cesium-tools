@@ -12,6 +12,11 @@ export function generateUUID() {
   });
 }
 
+export function generateColor() {
+  // 簡單的顏色產生器
+  return "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+}
+
 export function calculateBoxByDiagonal(diagonalArray?: Cartesian3[]):
   | {
       bounds: Bounds;

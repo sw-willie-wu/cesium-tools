@@ -40,7 +40,7 @@ export class DrawTool {
   private dynamicPointList: Cartesian3[] = [];
   private drawOptions: DataSourceOptions = defaultOption;
   private currentLayerKey: string = "";
-  private dynamicKey: string = generateUUID();
+  private dynamicKey: string = `tmp_${generateUUID()}`;
   private drawType: PolyTypes = "Line";
   private keepNode: Entity | undefined;
   private clickTimeout: NodeJS.Timeout | null = null;
@@ -236,11 +236,13 @@ export class DrawTool {
         const nodePos = this.keepNode?.position?.getValue();
         if (nodePos && this.drawType == "Line") {
           pointList.push(nodePos);
+          this.layerManager.removeLayer(this.currentLayerKey);
+          // this.currentLayerKey 
           this.layerManager.addLayer({
-            key: this.currentLayerKey,
+            key: `drawPolygon_${generateUUID()}`,
             layer: this.createPolygon(pointList),
             layerType: "Entity",
-            overwrite: true,
+            // overwrite: true,
             isShow: true,
           });
           this.viewer.scene.requestRender();
@@ -454,7 +456,7 @@ export class DrawTool {
   }
 
   start() {
-    this.currentLayerKey = generateUUID();
+    this.currentLayerKey = `draw${this.drawType}_${generateUUID()}`;
     this.existPointListMap.set(this.currentLayerKey, []);
     // this.enableCursorHint();
     // this.existPointLists.push([]);

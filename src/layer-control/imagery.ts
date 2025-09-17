@@ -75,7 +75,7 @@ export class ImageryControl {
   }
 
   getImage(key: string) {
-    return this.dataMap.get(key)
+    return this.dataMap.get(key);
   }
 
   removeImage(key: string) {

@@ -78,6 +78,7 @@ export class LayerTool {
           params?.options,
           params?.dataSource
         );
+        break;
       default:
         console.error(`Got wrong layer type ${params.layerType}`);
     }
@@ -120,15 +121,17 @@ export class LayerTool {
         );
         break;
       default:
-        console.error(`Add layer ${params.key} failed, got wrong layer type ${params.layerType}`);
+        console.error(
+          `Add layer ${params.key} failed, got wrong layer type ${params.layerType}`
+        );
     }
     this.dataMap.set(params.key, params.layerType);
-    console.debug(`Add ${params.layerType} ${params.key} successfully.`)
+    console.debug(`Add ${params.layerType} ${params.key} successfully.`);
   }
 
   getLayer(key: string) {
     const layerType = this.dataMap.get(key);
-    if (!layerType) return
+    if (!layerType) return;
     switch (layerType) {
       case "WMTS":
         return this.imageController.getImage(key);
@@ -149,7 +152,7 @@ export class LayerTool {
 
   removeLayer(key: string) {
     const layerType = this.dataMap.get(key);
-    if (!layerType) return
+    if (!layerType) return;
     switch (layerType) {
       case "WMTS":
         this.imageController.removeImage(key);
@@ -170,7 +173,9 @@ export class LayerTool {
         this.entityController.removeEntity(key);
         break;
       default:
-        console.error(`Remove layer ${key} failed, got wrong layer type ${layerType}`);
+        console.error(
+          `Remove layer ${key} failed, got wrong layer type ${layerType}`
+        );
         return;
     }
     this.dataMap.delete(key);
@@ -187,8 +192,31 @@ export class LayerTool {
       case "Single":
         this.imageController.updateImageOptions(key, options);
         break;
+      case "Geometry":
+        this.dataSourceController.updateDataSourceOptions(key, options);
+        break;
+      case "Entity":
+        this.entityController.updateEntityOptions(key, options);
+        break;
+      case "Model":
+        this.entityController.updateEntityOptions(key, options);
+        break;
       default:
-        console.error(`Update layer ${key} failed, got wrong layer type ${layerType}.`);
+        console.error(
+          `Update layer ${key} failed, got wrong layer type ${layerType}.`
+        );
     }
+    this.viewer.scene.requestRender();
+  }
+
+  fixEntityPosition(key: string) {
+    const layerType = this.dataMap.get(key);
+    if (layerType !== "Entity" && layerType !== "Model") {
+      console.error(
+        `Fix entity position failed, ${key} is not Entity or Model.`
+      );
+      return;
+    }
+    this.entityController.fixEntityPosition(key);
   }
 }

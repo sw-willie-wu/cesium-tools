@@ -125,10 +125,7 @@ export class ConvertTool {
     );
   }
 
-  HexToColor(
-    colorHex: string | undefined,
-    alpha?: number
-  ): Color | undefined {
+  HexToColor(colorHex: string | undefined, alpha?: number): Color | undefined {
     if (colorHex === undefined) return;
     if (!colorHex.startsWith("#")) {
       colorHex = `#${colorHex}`;
@@ -143,10 +140,25 @@ export class ConvertTool {
     return color;
   }
 
-  CanvasToPosition(canvas: CanvasPosition): Position | undefined {
+  CanvasToEllipsoidPosition(canvas: CanvasPosition): Position | undefined {
     const c2 = new Cartesian2(canvas.x, canvas.y);
     const c3 = this.viewer.camera.pickEllipsoid(c2);
     if (!c3) return;
     return ConvertTool.C3ToPosition(c3);
+  }
+
+  CanvasToTerrainPosition(canvas: CanvasPosition): Position | undefined {
+    const c2 = new Cartesian2(canvas.x, canvas.y);
+    const c3 = this.viewer.scene.pickPosition(c2);
+    if (!c3) return;
+    return ConvertTool.C3ToPosition(c3);
+  }
+
+  CanvasToPosition(canvas: CanvasPosition | Cartesian2): Position | undefined {
+    if (canvas instanceof Cartesian2) canvas = { x: canvas.x, y: canvas.y };
+    const terrain = this.viewer.terrainProvider?.constructor.name;
+    return terrain != "EllipsoidTerrainProvider"
+      ? this.CanvasToTerrainPosition(canvas)
+      : this.CanvasToEllipsoidPosition(canvas);
   }
 }
