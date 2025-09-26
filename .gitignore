@@ -1,3 +1,7 @@
 lib/
 types/
 !src/types/
+node_modules/
+dist/
+build/
+.DS_Store
