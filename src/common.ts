@@ -17,6 +17,45 @@ export function generateColor() {
   return "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 }
 
+export function generateLabelCanvas(
+  text: string,
+  styles?: {
+    fontSize?: number;
+    padding?: number;
+    backgroundColor?: string;
+    color?: string;
+  }
+) { 
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  if (!context) return;
+  canvas.width = context.measureText(text).width + (styles?.padding || 24) * 2;
+  canvas.height = (styles?.fontSize || 16) + (styles?.padding || 6) * 2;
+
+  context.beginPath();
+  context.roundRect(0, 0, canvas.width, canvas.height, 16);
+  context.fillStyle = styles?.backgroundColor || "#000000b0";
+  context.fill();
+
+  context.font = `${styles?.fontSize || 16}px Arial`;
+  context.fillStyle = styles?.color || "white";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text, canvas.width / 2, canvas.height / 2 + 2);
+  return canvas.toDataURL();
+}
+
+export function calculateGeodesic(p1: Cartesian3, p2: Cartesian3): EllipsoidGeodesic { 
+  const carto1 = Cartographic.fromCartesian(p1);
+  const carto2 = Cartographic.fromCartesian(p2);
+  return new EllipsoidGeodesic(carto1, carto2);
+}
+
+export function calculateGeodesicDistance(p1: Cartesian3, p2: Cartesian3): number { 
+  const geodesic = calculateGeodesic(p1, p2);
+  return geodesic.surfaceDistance;
+}
+
 export function calculateBoxByDiagonal(diagonalArray?: Cartesian3[]):
   | {
       bounds: Bounds;
@@ -68,26 +107,20 @@ export function calculateBoxByDiagonal(diagonalArray?: Cartesian3[]):
   };
 }
 
-export function calculatePolygonPosition(
-  diagonalArray: Cartesian3[],
+export function generatePolygonPositions(
+  center: Position,
+  semiX: number,
+  semiY: number,
   sideNum: number,
 ) {
   const angleStep = (2 * Math.PI) / sideNum;
   const angleOffset = sideNum % 2 === 0 ? angleStep / 2 : 0;
-  const boxElem = calculateBoxByDiagonal(diagonalArray);
-  const center = boxElem ? boxElem.center : ConvertTool.LLAToPosition(0, 0, 0);
-  const semiX = boxElem
-    ? ((boxElem.bounds.right - boxElem.bounds.left) / 2) *
-      (sideNum < 16 ? Math.sqrt(2) : 1)
-    : 1;
-  const semiY = boxElem
-    ? ((boxElem.bounds.top - boxElem.bounds.bottom) / 2) *
-      (sideNum < 16 ? Math.sqrt(2) : 1)
-    : 1;
+
   const posResult: Cartesian3[] = [];
   for (let i = 0; i <= sideNum; i++) {
     const theta = i * angleStep + angleOffset;
-    const dLon = semiX * Math.cos(theta);
+    const dLon = (semiX * Math.cos(theta)) / Math.cos(center.lat.radians);
+    // const dLon = semiX * Math.cos(theta);
     const dLat = semiY * Math.sin(theta);
     posResult.push(
       ConvertTool.LLAToPosition(
@@ -98,6 +131,31 @@ export function calculatePolygonPosition(
   }
   posResult.push(posResult[0]);
   return posResult;
+}
+
+export function calculatePolygonPosition(
+  diagonalArray: Cartesian3[],
+  sideNum: number,
+) {
+  const boxElem = calculateBoxByDiagonal(diagonalArray);
+  const center = boxElem ? boxElem.center : ConvertTool.LLAToPosition(0, 0, 0);
+  const semiX = boxElem
+    ? ((boxElem.bounds.right - boxElem.bounds.left) / 2) *
+      (sideNum < 16 ? Math.sqrt(2) : 1)
+    : 1;
+  const semiY = boxElem
+    ? ((boxElem.bounds.top - boxElem.bounds.bottom) / 2) *
+      (sideNum < 16 ? Math.sqrt(2) : 1)
+    : 1;
+  return generatePolygonPositions(center, semiX, semiY, sideNum);
+}
+
+export function formatUnit(val: number | undefined) {
+  if (!val) return;
+  if (val > 1000) {
+    return `${(val / 1000).toFixed(2)} km`;
+  }
+  return `${val.toFixed(2)} m`;
 }
 
 // import {
