@@ -5,6 +5,7 @@ import { NavigateTool } from "./navigator";
 import { TrackTool } from "./tracker";
 // import * as MeasureTool from './measure'
 import { LayerTool } from "./layer-control";
+import * as GisTool from "./gis";
 
 export {
   DrawTool,
@@ -13,5 +14,6 @@ export {
   NavigateTool,
   TrackTool,
   LayerTool,
+  GisTool
 };
 export type * from "./types";

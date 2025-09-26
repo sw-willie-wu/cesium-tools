@@ -4,6 +4,7 @@ export type LayerTypes =
   | "Geometry"
   | "Model"
   | "Entity"
+  | "Tileset"
   | "DataSource";
 
 export type PolyTypes =
@@ -13,4 +14,6 @@ export type PolyTypes =
   | "Circle"
   | "Square"
   | "Pentagon"
-  | "Hexagon";
+  | "Hexagon"
+  | "Polygon"
+  | "Buffer";

@@ -31,6 +31,18 @@ export class DataSourceControl {
     this.converter = new ConvertTool(this.viewer);
   }
 
+  addDataSource(
+    key: string,
+    dataSource: CustomDataSource,
+    isShow: boolean = false
+  ) {
+    if (this.dataMap.has(key)) return;
+    this.viewer.dataSources.add(dataSource);
+    this.dataMap.set(key, dataSource);
+    dataSource.show = isShow;
+    this.viewer.scene.requestRender();
+  }
+
   async addGeoJson(
     key: string,
     url: string,
@@ -41,7 +53,7 @@ export class DataSourceControl {
     try {
       const dataSource = await GeoJsonDataSource.load(url);
       dataSource.name = key;
-      console.debug(key, dataSource);
+      // console.debug(key, dataSource);
 
       const opt = { ...defaultOption, ...options };
       opt.fill = opt.fill ? opt.fill : generateColor();
@@ -110,28 +122,20 @@ export class DataSourceControl {
           }
         }
       });
-      this.viewer.dataSources.add(dataSource);
-      dataSource.show = isShow;
-      this.dataMap.set(key, dataSource);
-      this.viewer.scene.requestRender();
+      this.addDataSource(key, dataSource, isShow);
+      // this.viewer.dataSources.add(dataSource);
+      // dataSource.show = isShow;
+      // this.dataMap.set(key, dataSource);
+      // this.viewer.scene.requestRender();
     } catch (error) {
       console.error("❌ Failed to add GeoJson:", error);
     }
   }
 
-  addDataSource(
-    key: string,
-    dataSource: CustomDataSource,
-    isShow: boolean = false
-  ) {
-    if (this.dataMap.has(key)) return;
-    this.viewer.dataSources.add(dataSource);
-    dataSource.show = isShow;
-  }
-
   createDataSource(key: string, isShow: boolean = false) {
     const ds = new CustomDataSource(key);
     this.addDataSource(key, ds, isShow);
+    console.debug(`Add DataSource ${key} successfully.`);
   }
 
   getDataSource(key: string) {
@@ -149,6 +153,7 @@ export class DataSourceControl {
   }
 
   updateDataSourceOptions(key: string, options: DataSourceOptions) {
+    // console.debug(this.dataMap)
     const ds = this.dataMap.get(key) as any;
     if (!ds) {
       console.error(`❌ ${key} not exist in data sources.`);

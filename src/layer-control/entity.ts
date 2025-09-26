@@ -10,6 +10,7 @@ import {
 
 import { ConvertTool } from "../converter";
 
+
 export class EntityControl {
   private viewer: Viewer;
   private converter: ConvertTool;
@@ -27,6 +28,8 @@ export class EntityControl {
     isShow: boolean = false,
     dataSource?: DataSource
   ) {
+    if (!entity.id) entity.id = key;
+    if (!entity.name) entity.name = key;
     const res = dataSource
       ? dataSource.entities.add(entity)
       : this.viewer.entities.add(entity);
@@ -75,37 +78,70 @@ export class EntityControl {
     this.entityDataSourceMap.delete(key);
   }
 
+  // selectEntity(key: string, entity: Entity, options?: any) {
+  //   let layer: Entity.ConstructorOptions | undefined = undefined
+  //   const defaultOptions = {
+  //     clampToGround: true,
+  //     fill: "#ffd900ff",
+  //     alpha: 1,
+  //     markerColor: "#ffd90000",
+  //     markerSize: 8,
+  //     stroke: "#ffd900",
+  //     strokeWidth: 10,
+  //     show: true,
+  //   };
+  //   options = { ...defaultOptions, ...options };
+  //   // if (entity.polygon) {
+  //   //   const hierarchy = entity.polygon.hierarchy?.getValue();
+  //   //   layer = Creater.createLine(hierarchy.positions, false, options);
+  //   // } else
+  //   if (entity.polyline) {
+  //     const positions = entity.polyline.positions?.getValue();
+  //     layer = Creater.createLine(positions, false, options);
+
+  //   } else if (entity.point) {
+  //     const position = entity.position?.getValue();
+  //     if (!position) return;
+  //     layer = Creater.createPoint(position, options);
+  //     options.strokeWidth = 7;
+  //     options.markerSize = entity.point.pixelSize;
+  //     // this.addEntity(key, layer, options.show);
+  //   }
+  //   if (!layer) return;
+  //   this.addEntity(key, layer, options.show);
+  // }
+
   updateEntityOptions(key: string, options: any) {
     const entity = this.dataMap.get(key);
     if (!entity) {
       console.error(`❌ ${key} not exist in entities.`);
       return;
     }
-    
+
     Object.entries(options).forEach(([k, v]) => {
       if (k === "alpha") {
         return; // 跳過 alpha 處理
       }
-      
+
       // 處理顏色相關屬性
       if (["fill", "markerColor", "stroke"].includes(k) && typeof v === "string") {
         const colorValue = this.converter.HexToColor(v as string, options?.alpha || 1);
         (entity as any)[k] = colorValue;
         return;
       }
-      
+
       // 處理 show 屬性
       if (k === "show" && typeof v === "boolean") {
         entity.show = v;
         return;
       }
-      
+
       // 其他屬性直接設置
       if (entity.hasOwnProperty(k)) {
         (entity as any)[k] = v;
       }
     });
-    
+
     this.viewer.scene.requestRender();
   }
 

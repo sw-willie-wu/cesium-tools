@@ -2,11 +2,13 @@ import {
   Viewer,
   Math as CMath,
   Color,
+  Entity,
   Cartesian2,
   Cartesian3,
   Cartographic,
   Rectangle,
 } from "cesium";
+import { polygon } from "@turf/helpers";
 import type { Angle, Bounds, Position, CanvasPosition } from "../types";
 
 export class ConvertTool {
@@ -77,6 +79,17 @@ export class ConvertTool {
       color = color.withAlpha(alpha);
     }
     return color;
+  }
+
+  static EntityToPolygon(entity: Entity) {
+    const positions = entity.polygon?.hierarchy?.getValue().positions
+    if (!positions) return;
+    return polygon([
+      positions.map((pos: Cartesian3) => {
+        const p = ConvertTool.C3ToPosition(pos)
+        return [p.lon.degree, p.lat.degree]
+      })
+    ]);
   }
 
   DegToRad = (deg: number) => CMath.toRadians(deg);

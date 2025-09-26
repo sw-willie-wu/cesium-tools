@@ -7,9 +7,7 @@ import {
   ConstantProperty,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
-  PolylineDashMaterialProperty,
-  PolygonHierarchy,
-  HeightReference,
+  DataSource,
   Entity,
 } from "cesium";
 import { throttle } from "lodash";
@@ -17,7 +15,8 @@ import { throttle } from "lodash";
 import { LayerTool } from "../layer-control";
 import { ConvertTool } from "../converter";
 import { NavigateTool } from "../navigator";
-import { generateUUID, calculatePolygonPosition } from "../common";
+import { generateUUID } from "../common";
+import { createPoint, createPolygon, createPoly, createDistanceLabel } from "./creater";
 import type { PolyTypes, DataSourceOptions } from "../types";
 
 const defaultOption = {
@@ -28,7 +27,7 @@ const defaultOption = {
   markerSize: 8,
   stroke: "#ffd900",
   strokeWidth: 2,
-  show: true,
+  show: true
 };
 
 export class DrawTool {
@@ -45,6 +44,7 @@ export class DrawTool {
   private keepNode: Entity | undefined;
   private clickTimeout: NodeJS.Timeout | null = null;
   private isDoubleClick: boolean = false;
+  enableLabel: boolean = false;
 
   constructor(viewer: Viewer, layerManager?: LayerTool) {
     this.viewer = viewer;
@@ -63,90 +63,6 @@ export class DrawTool {
     Object.assign(this.drawOptions, options);
   }
 
-  createPoint(
-    position: CallbackPositionProperty | Cartesian3,
-    options?: DataSourceOptions
-  ) {
-    options = { ...this.drawOptions, ...options };
-    return {
-      position: position,
-      point: {
-        pixelSize: options?.markerSize,
-        color: this.converter.HexToColor(options.markerColor),
-        outlineColor: this.converter.HexToColor(options.stroke),
-        outlineWidth: options.strokeWidth,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
-        heightReference: options?.clampToGround
-          ? HeightReference.CLAMP_TO_GROUND
-          : HeightReference.NONE,
-      },
-    };
-  }
-
-  createLine(
-    positions: CallbackProperty | Cartesian3[],
-    isDash: boolean = false,
-    options?: DataSourceOptions
-  ) {
-    options = { ...this.drawOptions, ...options };
-    const lineColor = this.converter.HexToColor(options.stroke);
-
-    return {
-      polyline: {
-        positions: positions,
-        clampToGround: options?.clampToGround,
-        width: options?.strokeWidth,
-        material: isDash
-          ? new PolylineDashMaterialProperty({
-              color: lineColor,
-              dashLength: 10,
-              dashPattern: 255,
-            })
-          : lineColor,
-      },
-    };
-  }
-
-  createPolygon(
-    positions: CallbackProperty | Cartesian3[],
-    isDash: boolean = false,
-    options?: DataSourceOptions
-  ) {
-    options = { ...this.drawOptions, ...options };
-    const hierCallback = new CallbackProperty((time) => {
-      const posArray = Array.isArray(positions)
-        ? positions
-        : positions.getValue(time);
-      return new PolygonHierarchy(posArray);
-    }, false);
-    return {
-      ...this.createLine(positions, isDash, options),
-      polygon: {
-        hierarchy: hierCallback,
-        heightReference: options?.clampToGround
-          ? HeightReference.CLAMP_TO_GROUND
-          : HeightReference.NONE,
-        material: this.converter.HexToColor(options.fill, 0.4),
-        outline: false,
-      },
-    };
-  }
-
-  createPolygonByDiagonal(
-    positions: CallbackProperty | Cartesian3[],
-    isDash: boolean = false,
-    sideNum: number = 4,
-    options?: DataSourceOptions
-  ) {
-    const posCallback = new CallbackProperty((time) => {
-      const posArray = Array.isArray(positions)
-        ? positions
-        : positions.getValue(time);
-      return calculatePolygonPosition(posArray, sideNum);
-    }, false);
-    return this.createPolygon(posCallback, isDash, options);
-  }
-
   updateNodes() {
     const pointList = this.existPointListMap.get(this.currentLayerKey);
     if (pointList === undefined) return;
@@ -159,9 +75,10 @@ export class DrawTool {
       if (!node?.point) {
         this.layerManager.addLayer({
           key: `tmpNode${i}`,
-          layer: this.createPoint(
+          layer: createPoint(
             new CallbackPositionProperty(() => pointList[i], false),
             {
+              ...this.drawOptions,
               markerSize: 8,
               markerColor: "#ffffffff",
               strokeWidth: 3,
@@ -203,12 +120,16 @@ export class DrawTool {
       );
       if (!cartesian) return; // 沒在地圖上
       NavigateTool.disableDefaultControl(this.viewer);
-      // this.viewer.scene.screenSpaceCameraController.ena
       pointList.push(cartesian);
 
       this.layerManager.addLayer({
         key: `${this.currentLayerKey}`,
-        layer: this.createLine(new CallbackProperty(() => pointList, false)),
+        layer: createPoly(
+          'Line',
+          new CallbackProperty(() => pointList, false),
+          false,
+          this.drawOptions
+        ),
         layerType: "Entity",
         isShow: true,
       });
@@ -226,10 +147,7 @@ export class DrawTool {
           this.isDoubleClick = false;
           return;
         }
-        const cartesian = this.viewer.camera.pickEllipsoid(
-          click.position,
-          this.viewer.scene.globe.ellipsoid
-        );
+        const cartesian = this.converter.CanvasToPosition(click.position)?.c3;
         if (!cartesian) return;
 
         // 點擊新增成polygon
@@ -237,10 +155,9 @@ export class DrawTool {
         if (nodePos && this.drawType == "Line") {
           pointList.push(nodePos);
           this.layerManager.removeLayer(this.currentLayerKey);
-          // this.currentLayerKey 
           this.layerManager.addLayer({
-            key: `drawPolygon_${generateUUID()}`,
-            layer: this.createPolygon(pointList),
+            key: `drawPolygon_${this.currentLayerKey.split('_')[1]}`,
+            layer: createPolygon(pointList, false, this.drawOptions),
             layerType: "Entity",
             // overwrite: true,
             isShow: true,
@@ -256,9 +173,12 @@ export class DrawTool {
           const pointIdx = pointList.length - 1;
           this.layerManager.addLayer({
             key: `${this.currentLayerKey}_${pointIdx}`,
-            layer: this.createPoint(
+            layer: createPoint(
               new CallbackPositionProperty(() => pointList.at(pointIdx), false),
-              { strokeWidth: 0 }
+              {
+                ...this.drawOptions,
+                strokeWidth: 0
+              }
             ),
             layerType: "Entity",
             isShow: true,
@@ -268,83 +188,94 @@ export class DrawTool {
           // 1. 起始節點
           // 2. 動態線 / 動態形狀
           if (pointList.length === 1) {
-            let dynamicPoly;
-            switch (this.drawType) {
-              case "Line":
-                dynamicPoly = this.createLine(
-                  new CallbackProperty(() => this.dynamicPointList, false),
-                  true
-                );
-                break;
-              case "Circle":
-                dynamicPoly = this.createPolygonByDiagonal(
-                  new CallbackProperty(() => this.dynamicPointList, false),
-                  true,
-                  64
-                );
-                break;
-              case "Square":
-                dynamicPoly = this.createPolygonByDiagonal(
-                  new CallbackProperty(() => this.dynamicPointList, false),
-                  true,
-                  4
-                );
-                break;
-            }
+            console.debug(`只有一個點，產生起始節點與動態${this.drawType}`, this.dynamicPointList);
             this.layerManager.addLayer({
               key: this.dynamicKey,
-              layer: dynamicPoly,
+              layer: createPoly(
+                this.drawType,
+                new CallbackProperty(() => this.dynamicPointList, false),
+                true,
+                this.drawOptions
+              ),
               layerType: "Entity",
               isShow: true,
             });
           }
           // 有兩個點，可以畫實際線段 或 產製多邊形並結束
           if (pointList.length === 2) {
-            switch (this.drawType) {
-              case "Line":
-                this.layerManager.addLayer({
-                  key: this.currentLayerKey,
-                  layer: this.createLine(
-                    new CallbackProperty(() => pointList, false),
-                    false
-                  ),
-                  layerType: "Entity",
-                  isShow: true,
-                });
-                break;
-              case "Circle":
-                this.layerManager.addLayer({
-                  key: this.currentLayerKey,
-                  layer: this.createPolygonByDiagonal(
-                    new CallbackProperty(() => pointList, false),
-                    false,
-                    64
-                  ),
-                  layerType: "Entity",
-                  isShow: true,
-                });
-                this.stop();
-                this.start();
-                break;
-              case "Square":
-                this.layerManager.addLayer({
-                  key: this.currentLayerKey,
-                  layer: this.createPolygonByDiagonal(
-                    new CallbackProperty(() => pointList, false),
-                    false,
-                    4
-                  ),
-                  layerType: "Entity",
-                  isShow: true,
-                });
-                this.stop();
-                this.start();
-                break;
+            this.layerManager.addLayer({
+              key: this.currentLayerKey,
+              layer: createPoly(
+                this.drawType,
+                new CallbackProperty(() => pointList, false),
+                false,
+                this.drawOptions
+              ),
+              layerType: "Entity",
+              isShow: true,
+            });
+          }
+          // if (this.drawType == 'Line' && this.enableLabel) {
+          if (this.enableLabel) {
+            const ds = this.layerManager.createDataSource(`label_${this.currentLayerKey.split('_')[1]}`, true)
+            for (let i = 0; i < pointList.length - 1; i++) {
+              this.layerManager.addLayer({
+                key: `label_${this.currentLayerKey.split('_')[1]}_${i}`,
+                layer: createDistanceLabel(
+                  pointList[i],
+                  pointList[i + 1],
+                ),
+                layerType: "Entity",
+                isShow: true,
+                overwrite: true,
+                dataSource: ds as DataSource
+              });
             }
+            this.layerManager.addLayer({
+              key: `tmpLabel`,
+              layer: createDistanceLabel(
+                new CallbackPositionProperty(() => this.dynamicPointList[0], false),
+                new CallbackPositionProperty(() => this.dynamicPointList[1], false),
+              ),
+              layerType: "Entity",
+              isShow: true,
+              overwrite: true
+            });
+            if (this.drawType === "Buffer") {
+              this.layerManager.addLayer({
+                key: `tmpRadius`,
+                layer: createPoly(
+                  "Line",
+                  new CallbackProperty(() => this.dynamicPointList, false),
+                  true,
+                  this.drawOptions
+                ),
+                layerType: "Entity",
+                isShow: true,
+                overwrite: true
+              });
+              this.layerManager.addLayer({
+                key: `label_${this.currentLayerKey.split('_')[1]}_radius`,
+                layer: createPoly(
+                  "Line",
+                  new CallbackProperty(() => pointList, false),
+                  true,
+                  this.drawOptions
+                ),
+                layerType: "Entity",
+                isShow: true,
+                overwrite: true,
+                dataSource: ds as DataSource
+              });
+            }
+          }
+
+          if (pointList.length === 2 && (this.drawType === "Circle" || this.drawType === "Square" || this.drawType === "Buffer")) {
+            this.stop();
+            this.start();
           }
           // 每次點擊都更新節點
           this.updateNodes();
-          console.log("click");
         }
         this.viewer.scene.requestRender();
       }, 250); // 250ms 內若有雙擊則不執行單擊
@@ -357,10 +288,7 @@ export class DrawTool {
 
     this.handler.setInputAction(
       throttle((movement: any) => {
-        const cartesian = this.viewer.camera.pickEllipsoid(
-          movement.endPosition,
-          this.viewer.scene.globe.ellipsoid
-        );
+        const cartesian = this.converter.CanvasToPosition(movement.endPosition)?.c3;
         if (!cartesian) return; // 沒在地圖上
         if (pointList.length === 0) return; // 沒有畫任何東西
 
@@ -416,10 +344,7 @@ export class DrawTool {
     if (pointList === undefined) return;
 
     this.handler.setInputAction((click: any) => {
-      const cartesian = this.viewer.camera.pickEllipsoid(
-        click.position,
-        this.viewer.scene.globe.ellipsoid
-      );
+      const cartesian = this.converter.CanvasToPosition(click.position)?.c3;
       if (!cartesian) return;
       if (pointList.length <= 1) {
         this.stop();
@@ -473,7 +398,6 @@ export class DrawTool {
   }
 
   stop() {
-    console.log("end draw");
     const pointList = this.existPointListMap.get(this.currentLayerKey);
     if (pointList === undefined) return;
     if (pointList.length < 2) {
@@ -482,6 +406,7 @@ export class DrawTool {
     }
     this.removeNodes(0);
     this.layerManager.removeLayer(this.dynamicKey);
+    this.layerManager.removeLayer('tmpLabel');
     this.handler.removeInputAction(ScreenSpaceEventType.LEFT_DOWN);
     this.handler.removeInputAction(ScreenSpaceEventType.LEFT_CLICK);
     this.handler.removeInputAction(ScreenSpaceEventType.LEFT_UP);
