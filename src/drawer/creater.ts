@@ -5,8 +5,6 @@ import {
   PolylineDashMaterialProperty,
   PolygonHierarchy,
   HeightReference,
-  Billboard,
-  HorizontalOrigin,
 } from "cesium";
 
 import { ConvertTool } from "../converter";

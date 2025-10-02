@@ -15,9 +15,10 @@ import { throttle } from "lodash";
 import { LayerTool } from "../layer-control";
 import { ConvertTool } from "../converter";
 import { NavigateTool } from "../navigator";
-import { generateUUID } from "../common";
+import { generateUUID, generatePolygonPositions } from "../common";
 import { createPoint, createPolygon, createPoly, createDistanceLabel } from "./creater";
 import type { PolyTypes, DataSourceOptions } from "../types";
+// import { center } from "@turf/turf";
 
 const defaultOption = {
   clampToGround: true,
@@ -105,6 +106,40 @@ export class DrawTool {
     }
   }
 
+  createPoly(
+  drawType: PolyTypes,
+  pointList: Cartesian3[] | CallbackProperty,
+  isDash: boolean = false,
+  options: DataSourceOptions
+  ) {
+    return createPoly(drawType, pointList, isDash, options);
+}
+
+  drawPoly(params: {
+    center: { lat: number, lon: number },
+    sideNum: number,
+    radius: number,
+    isDash: boolean,
+  }) {
+    const R = 6378137; // 地球半徑
+    const dist = params.radius / R * 180 / Math.PI; // 角度 = 弧長 / 半徑 * 180/π
+    const centerPos = ConvertTool.LLAToPosition(params.center.lon, params.center.lat);
+    const p = generatePolygonPositions(
+      centerPos,
+      dist,
+      dist,
+      params.sideNum
+    );
+
+    this.layerManager.addLayer({
+      key: params.isDash ? this.dynamicKey : this.currentLayerKey,
+      layer: createPolygon(p, params.isDash, this.drawOptions),
+      layerType: "Entity",
+      isShow: true,
+      overwrite: params.isDash
+    });
+  }
+
   handleLeftDown() {
     const pointList = this.existPointListMap.get(this.currentLayerKey);
     if (
@@ -114,10 +149,11 @@ export class DrawTool {
     )
       return;
     this.handler.setInputAction((click: any) => {
-      const cartesian = this.viewer.camera.pickEllipsoid(
-        click.position,
-        this.viewer.scene.globe.ellipsoid
-      );
+      const cartesian = this.converter.CanvasToPosition(click.position)?.c3;
+      // const cartesian = this.viewer.camera.pickEllipsoid(
+      //   click.position,
+      //   this.viewer.scene.globe.ellipsoid
+      // );
       if (!cartesian) return; // 沒在地圖上
       NavigateTool.disableDefaultControl(this.viewer);
       pointList.push(cartesian);
@@ -152,7 +188,7 @@ export class DrawTool {
 
         // 點擊新增成polygon
         const nodePos = this.keepNode?.position?.getValue();
-        if (nodePos && this.drawType == "Line") {
+        if (nodePos && this.drawType == "Line" && !this.enableLabel) {
           pointList.push(nodePos);
           this.layerManager.removeLayer(this.currentLayerKey);
           this.layerManager.addLayer({
@@ -188,7 +224,7 @@ export class DrawTool {
           // 1. 起始節點
           // 2. 動態線 / 動態形狀
           if (pointList.length === 1) {
-            console.debug(`只有一個點，產生起始節點與動態${this.drawType}`, this.dynamicPointList);
+            console.debug(`只有一個點，產生起始節點與動態${this.drawType}`);
             this.layerManager.addLayer({
               key: this.dynamicKey,
               layer: createPoly(
@@ -386,6 +422,7 @@ export class DrawTool {
     // this.enableCursorHint();
     // this.existPointLists.push([]);
     this.dynamicPointList = [];
+    if (this.drawType === "Polygon") return;
 
     this.clickTimeout = null;
     this.isDoubleClick = false;
@@ -400,13 +437,14 @@ export class DrawTool {
   stop() {
     const pointList = this.existPointListMap.get(this.currentLayerKey);
     if (pointList === undefined) return;
-    if (pointList.length < 2) {
+    if (pointList.length < 2 && this.drawType !== "Polygon") {
       this.layerManager.removeLayer(this.currentLayerKey);
       this.existPointListMap.delete(this.currentLayerKey);
     }
     this.removeNodes(0);
     this.layerManager.removeLayer(this.dynamicKey);
     this.layerManager.removeLayer('tmpLabel');
+    this.layerManager.removeLayer('tmpRadius');
     this.handler.removeInputAction(ScreenSpaceEventType.LEFT_DOWN);
     this.handler.removeInputAction(ScreenSpaceEventType.LEFT_CLICK);
     this.handler.removeInputAction(ScreenSpaceEventType.LEFT_UP);

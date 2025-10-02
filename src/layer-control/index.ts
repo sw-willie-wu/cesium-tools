@@ -312,6 +312,23 @@ export class LayerTool extends EventEmitter {
     this.entityController.fixEntityPosition(key);
   }
 
+  getAllEntities() {
+    const entities: Entity[] = [];
+    this.dataMap.forEach((layerType, key) => {
+      if (layerType === "Entity" || layerType === "Model") {
+        const entity = this.entityController.getEntity(key);
+        if (entity) entities.push(entity);
+      }
+      if (layerType === "DataSource" || layerType === "Geometry") {
+        const ds = this.dataSourceController.getDataSource(key) as DataSource;
+        if (ds) {
+          entities.push(...ds.entities.values);
+        };
+      }
+    })
+    return entities;
+  }
+
   // enableSelectMode(mode: string) {
 
   // }
