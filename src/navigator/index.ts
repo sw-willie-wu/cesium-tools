@@ -38,7 +38,19 @@ export class NavigateTool {
 
   get camera(): CameraParams {
     const cam = this.viewer.camera;
-    const position: Position = this.converter.C3ToPosition(cam.positionWC);
+    // 防呆：底圖半透明時 cam.positionWC 可能為 undefined
+    let position: Position;
+    if (cam.positionWC) {
+      position = this.converter.C3ToPosition(cam.positionWC);
+    } else if (cam.position) {
+      // fallback: 用 position
+      position = this.converter.C3ToPosition(cam.position);
+    } else {
+      // fallback: 給預設值，避免崩潰
+      // 需提供正確的 lon/lat/height/c3 結構，且 Angle 不能為 undefined
+      const zeroAngle = this.converter.RadToAngle(0);
+      position = { lon: zeroAngle, lat: zeroAngle, height: 0, c3: new Cartesian3() };
+    }
     const attitude: Attitude = {
       heading: this.converter.RadToAngle(cam.heading),
       pitch: this.converter.RadToAngle(cam.pitch),

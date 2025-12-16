@@ -170,8 +170,16 @@ export class ConvertTool {
   CanvasToPosition(canvas: CanvasPosition | Cartesian2): Position | undefined {
     if (canvas instanceof Cartesian2) canvas = { x: canvas.x, y: canvas.y };
     const terrain = this.viewer.terrainProvider?.constructor.name;
-    return terrain != "EllipsoidTerrainProvider"
-      ? this.CanvasToTerrainPosition(canvas)
-      : this.CanvasToEllipsoidPosition(canvas);
+    if (terrain != "EllipsoidTerrainProvider") {
+      // 有地形時，優先用地形座標，失敗時 fallback 用橢球體
+      let pos = this.CanvasToTerrainPosition(canvas);
+      if (!pos) {
+        pos = this.CanvasToEllipsoidPosition(canvas);
+      }
+      return pos;
+    } else {
+      // 無地形時，直接用橢球體座標
+      return this.CanvasToEllipsoidPosition(canvas);
+    }
   }
 }
